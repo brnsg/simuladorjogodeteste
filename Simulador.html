@@ -1,0 +1,2097 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Ordem Paranormal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Foundation:wght@400..700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais para o corpo da página */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000; /* Preto */
+            color: #e5e5e5; /* Branco suave */
+        }
+        .title-font {
+            font-family: 'Edu NSW ACT Foundation', cursive;
+            letter-spacing: 1px;
+        }
+        /* Container principal para centralizar o conteúdo */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        /* Estilo base para os cards */
+        .card {
+            background-color: #111111; /* Quase preto */
+            border: 1px solid #4b0000; /* Vermelho muito escuro */
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px -1px rgba(159, 18, 57, 0.2);
+        }
+        /* Estilos para inputs, selects e textareas */
+        input, select, textarea {
+            background-color: #000000;
+            border: 1px solid #52525b;
+            color: #e5e5e5;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ef4444; /* Vermelho */
+        }
+        /* Estilo base para botões */
+        button {
+            background-color: #991b1b; /* Vermelho-800 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            border: 1px solid #dc2626;
+        }
+        button:hover {
+            background-color: #ef4444; /* Vermelho-500 */
+        }
+        button:disabled {
+            background-color: #3f3f46;
+            border-color: #27272a;
+            color: #71717a;
+            cursor: not-allowed;
+        }
+        
+        /* --- ESTILOS PARA NAVEGAÇÃO LATERAL (DESKTOP) --- */
+        #tabContainer {
+             width: auto;
+             background-color: transparent;
+             padding: 0;
+             z-index: 1;
+        }
+
+        .main-tab-button {
+            background-color: transparent;
+            border: 2px solid transparent;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+        }
+        .main-tab-button:hover {
+            background-color: #27272a;
+        }
+        .main-tab-button.active {
+            background-color: #3f3f46;
+        }
+        .main-tab-button img {
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+        .main-tab-button.active img, .main-tab-button:hover img {
+            opacity: 1;
+        }
+        .sub-tab-menu {
+            display: none;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        .sub-tab-menu.active {
+            display: flex;
+        }
+        .tab-button {
+            background-color: #111111;
+            color: #a1a1aa;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #3f3f46;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .tab-button.active {
+            background-color: #000000;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        .icon-invert {
+            filter: invert(1);
+        }
+        
+        /* Caixa de mensagem para feedback ao usuário */
+        #messageBox {
+            position: fixed; top: 20px; right: 20px; background-color: #166534; color: white;
+            padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 2001; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #messageBox.show { opacity: 1; visibility: visible; }
+        #messageBox.error { background-color: #991b1b; }
+        #messageBox.dangerous { background: linear-gradient(45deg, #b91c1c, #f97316); }
+
+        /* Estilos para as sub-abas (Detalhes do Agente) */
+        .sub-tab-button {
+            background-color: #27272a; color: #a1a1aa; padding: 0.5rem 1rem;
+            border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;
+            font-weight: 500;
+        }
+        .sub-tab-button.active { background-color: #111111; color: #ffffff; }
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+
+        /* Estilo para agentes que estão em missão */
+        .agent-in-mission { opacity: 0.6; cursor: not-allowed; }
+
+        /* Modal inicial e de confirmação */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); z-index: 2000;
+        }
+        /* Estilo para missões perigosas */
+        .dangerous-mission {
+            border: 2px solid #ef4444;
+            background-color: #450a0a;
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-300 min-h-screen">
+
+    <!-- Modal para definir a data inicial do jogo -->
+    <div id="dateStartModal" class="modal-overlay flex items-center justify-center">
+        <div class="card w-full max-w-md">
+            <h2 class="text-2xl font-bold text-red-500 mb-4">Início da Campanha</h2>
+            <p class="mb-4 text-gray-300">Defina a data em que a simulação irá começar.</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="startYear" class="block text-sm font-medium mb-1">Ano:</label>
+                    <input type="number" id="startYear" value="2025">
+                </div>
+                <div>
+                    <label for="startMonth" class="block text-sm font-medium mb-1">Mês:</label>
+                    <select id="startMonth">
+                        <option value="0">Janeiro</option> <option value="1">Fevereiro</option>
+                        <option value="2">Março</option> <option value="3">Abril</option>
+                        <option value="4">Maio</option> <option value="5">Junho</option>
+                        <option value="6">Julho</option> <option value="7">Agosto</option>
+                        <option value="8">Setembro</option> <option value="9">Outubro</option>
+                        <option value="10" selected>Novembro</option> <option value="11">Dezembro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="startDay" class="block text-sm font-medium mb-1">Dia:</label>
+                    <input type="number" id="startDay" value="1" min="1" max="31">
+                </div>
+                <button id="startGameBtn" class="w-full text-lg py-2">Iniciar Simulação</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmação Genérico -->
+    <div id="confirmationModal" class="modal-overlay hidden items-center justify-center">
+        <div class="card w-full max-w-md">
+            <h2 id="confirmationTitle" class="text-2xl font-bold text-yellow-300 mb-4">Confirmar Ação</h2>
+            <p id="confirmationMessage" class="mb-6 text-gray-300">Você tem certeza?</p>
+            <div class="flex justify-end gap-4">
+                <button id="confirmBtn" class="bg-green-700 hover:bg-green-600">Confirmar</button>
+                <button id="cancelBtn" class="bg-red-800 hover:bg-red-700">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Adicionar Laço Familiar -->
+    <div id="familyTieModal" class="modal-overlay hidden items-center justify-center">
+        <div class="card w-full max-w-md">
+            <h2 class="text-2xl font-bold text-red-500 mb-4">Adicionar Laço Familiar</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="familyAgentSelect" class="block text-sm font-medium mb-1">Parente:</label>
+                    <select id="familyAgentSelect"></select>
+                </div>
+                <div>
+                    <label for="familyRelationSelect" class="block text-sm font-medium mb-1">Relação:</label>
+                    <select id="familyRelationSelect">
+                        <option value="spouse">Cônjuge</option>
+                        <option value="parent">Pai/Mãe</option>
+                        <option value="child">Filho/Filha</option>
+                        <option value="sibling">Irmão/Irmã</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button id="confirmFamilyBtn" class="bg-green-700 hover:bg-green-600">Confirmar</button>
+                    <button id="cancelFamilyBtn" class="bg-gray-600 hover:bg-gray-700">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal do Jogo -->
+    <div id="mainContent" class="hidden">
+        <div id="messageBox" role="alert"></div>
+        <div class="container py-8">
+            <!-- Cabeçalho com título, relógio e dinheiro -->
+            <div class="flex flex-col md:flex-row flex-wrap justify-between items-center mb-8 gap-4">
+                <h1 class="title-font text-4xl sm:text-5xl font-bold text-red-600 text-center md:text-left">Simulador de Ordem Paranormal</h1>
+                <div class="flex items-center gap-6 text-xl sm:text-2xl font-semibold">
+                    <div id="gameClockDisplay" class="text-gray-300">--/--/---- 00:00</div>
+                    <div class="text-gray-300">Dinheiro: $<span id="playerMoneyDisplay">5000</span></div>
+                </div>
+            </div>
+
+            <!-- Botão do Menu Mobile -->
+            <div class="md:hidden mb-4 flex justify-end">
+                <button id="menu-toggle" class="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+
+            <!-- Layout Principal: Navegação à Esquerda, Conteúdo à Direita -->
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Navegação por Abas (Desktop) -->
+                <div id="tabContainer" class="hidden md:flex flex-col md:w-48 flex-shrink-0">
+                    <!-- Grupo Ordem -->
+                    <div class="main-tab-group">
+                        <button class="main-tab-button active">
+                            <img src="https://cdn-icons-png.flaticon.com/512/916/916772.png" class="w-8 h-8 icon-invert" title="Ordem" onerror="this.onerror=null;this.src='https://placehold.co/32x32/111111/e5e5e5?text=O'">
+                        </button>
+                        <div class="sub-tab-menu active">
+                            <button class="tab-button" data-tab="order-details">Detalhes da Ordem</button>
+                        </div>
+                    </div>
+                
+                    <!-- Grupo Agentes -->
+                    <div class="main-tab-group">
+                        <button class="main-tab-button">
+                            <img src="https://wallpapers.com/images/hd/generic-person-icon-profile-ulmsmhnz0kqafcqn-2.jpg" class="w-8 h-8 icon-invert" title="Agentes" onerror="this.onerror=null;this.src='https://placehold.co/32x32/111111/e5e5e5?text=A'">
+                        </button>
+                        <div class="sub-tab-menu">
+                            <button class="tab-button" data-tab="recruitment">Recrutamento</button>
+                            <button class="tab-button" data-tab="agents">Seus Agentes</button>
+                            <button class="tab-button" data-tab="details">Detalhes do Agente</button>
+                        </div>
+                    </div>
+                
+                    <!-- Grupo Inventário -->
+                    <div class="main-tab-group">
+                        <button class="main-tab-button">
+                            <img src="https://www.iconsdb.com/icons/preview/white/wallet-xxl.png" class="w-8 h-8" title="Inventário" onerror="this.onerror=null;this.src='https://placehold.co/32x32/111111/e5e5e5?text=I'">
+                        </button>
+                        <div class="sub-tab-menu">
+                            <button class="tab-button" data-tab="stockpile">Estoque</button>
+                            <button class="tab-button" data-tab="shop">Loja</button>
+                        </div>
+                    </div>
+                
+                    <!-- Grupo Operações -->
+                    <div class="main-tab-group">
+                        <button class="main-tab-button">
+                            <img src="https://cdn-icons-png.flaticon.com/512/1694/1694262.png" class="w-8 h-8 icon-invert" title="Operações" onerror="this.onerror=null;this.src='https://placehold.co/32x32/111111/e5e5e5?text=Op'">
+                        </button>
+                        <div class="sub-tab-menu">
+                            <button class="tab-button" data-tab="missions">Missões</button>
+                            <button class="tab-button" data-tab="mission-reports">Relatórios de Missão</button>
+                        </div>
+                    </div>
+                
+                    <!-- Grupo Jogo -->
+                    <div class="main-tab-group">
+                        <button class="main-tab-button">
+                            <img src="https://cdn-icons-png.flaticon.com/512/1909/1909764.png" class="w-8 h-8 icon-invert" title="Jogo" onerror="this.onerror=null;this.src='https://placehold.co/32x32/111111/e5e5e5?text=J'">
+                        </button>
+                        <div class="sub-tab-menu">
+                            <button class="tab-button" data-tab="simulation">Simulação</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Mobile -->
+                <div id="mobileMenuContainer" class="md:hidden fixed inset-0 bg-black/95 z-40 p-6 hidden overflow-y-auto">
+                    <button id="mobile-menu-close" class="absolute top-4 right-4 p-2">
+                        <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <div class="space-y-4 mt-8">
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-500 mb-2 border-b border-red-800 pb-1">Ordem</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="tab-button text-left" data-tab="order-details">Detalhes da Ordem</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-500 mb-2 border-b border-red-800 pb-1">Agentes</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="tab-button text-left" data-tab="recruitment">Recrutamento</button>
+                                <button class="tab-button text-left" data-tab="agents">Seus Agentes</button>
+                                <button class="tab-button text-left" data-tab="details">Detalhes do Agente</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-500 mb-2 border-b border-red-800 pb-1">Inventário</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="tab-button text-left" data-tab="stockpile">Estoque</button>
+                                <button class="tab-button text-left" data-tab="shop">Loja</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-500 mb-2 border-b border-red-800 pb-1">Operações</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="tab-button text-left" data-tab="missions">Missões</button>
+                                <button class="tab-button text-left" data-tab="mission-reports">Relatórios de Missão</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-500 mb-2 border-b border-red-800 pb-1">Jogo</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="tab-button text-left" data-tab="simulation">Simulação</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wrapper para o Conteúdo das Abas -->
+                <div class="flex-grow">
+                    <!-- Aba Detalhes da Ordem -->
+                    <div id="order-details" class="tab-content active grid-cols-1">
+                        <div class="card">
+                            <div class="flex border-b border-gray-700 mb-4 flex-wrap">
+                                <button class="sub-tab-button active" data-sub-tab="order-status">Estado Geral</button>
+                                <button class="sub-tab-button" data-sub-tab="order-events">Eventos</button>
+                            </div>
+
+                            <div id="order-status" class="sub-tab-content active">
+                                <h2 class="text-2xl font-semibold mb-6 text-red-500">Estado Geral da Ordem</h2>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                                    <div class="card bg-black/20 p-6">
+                                        <h3 class="text-lg text-red-400 mb-2">Total de Agentes</h3>
+                                        <p id="totalAgentsStat" class="text-4xl font-bold text-white"></p>
+                                    </div>
+                                    <div class="card bg-black/20 p-6">
+                                        <h3 class="text-lg text-red-400 mb-2">Missões em Andamento</h3>
+                                        <p id="activeMissionsStat" class="text-4xl font-bold text-white"></p>
+                                    </div>
+                                    <div class="card bg-black/20 p-6">
+                                        <h3 class="text-lg text-red-400 mb-2">Dias de Operação</h3>
+                                        <p id="daysPassedStat" class="text-4xl font-bold text-white"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="order-events" class="sub-tab-content">
+                                <h2 class="text-2xl font-semibold mb-4 text-red-500">Eventos da Ordem</h2>
+                                <p class="mb-6 text-gray-400">Organize eventos para melhorar a moral e a sanidade de seus agentes. Eventos afetam todos os agentes que não estão em missão.</p>
+                                <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <!-- Eventos serão inseridos aqui via JS -->
+                                </div>
+                                <div id="funeralPlanner" class="mt-6 pt-6 border-t border-gray-700">
+                                    <!-- Conteúdo do Funeral será inserido aqui -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aba de Recrutamento -->
+                    <div id="recruitment" class="tab-content grid-cols-1 gap-8 mb-8">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Recrutar Novos Agentes</h2>
+                            <p id="recruitTimerDisplay" class="text-center text-red-400 font-bold text-lg mb-4"></p>
+                            <div id="recruitList" class="space-y-4"></div>
+                        </div>
+                        <div id="customAgentForm" class="card w-full hidden">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Criar Agente Personalizado</h2>
+                            <form id="customAgentFormElement" class="space-y-3">
+                                <div><label for="agentName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="agentName" placeholder="Nome do Agente"></div>
+                                <div><label for="agentSex" class="block text-sm font-medium mb-1">Sexo:</label><select id="agentSex"><option>Masculino</option><option>Feminino</option><option>Não Binário</option></select></div>
+                                <div><label for="agentAge" class="block text-sm font-medium mb-1">Idade:</label><input type="number" id="agentAge" value="25" min="18" max="60"></div>
+                                <div><label for="agentExperience" class="block text-sm font-medium mb-1">Experiência (0-100):</label><input type="number" id="agentExperience" value="10" min="0" max="100"></div>
+                                <div><label for="agentPhysical" class="block text-sm font-medium mb-1">Físico:</label><textarea id="agentPhysical" rows="2" placeholder="Ex: Atlético, Magro, Forte"></textarea></div>
+                                <button id="createCustomAgentBtn" type="button" class="w-full">Adicionar Agente</button>
+                                <button id="cancelCustomAgentFormBtn" type="button" class="w-full mt-2 bg-gray-600 hover:bg-gray-700">Cancelar</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Aba de Agentes -->
+                    <div id="agents" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Seus Agentes</h2>
+                            <div class="mb-4"><button id="promoteToVerissimoBtn" class="w-full lg:w-auto px-6 py-3 text-lg bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50" disabled>Promover a Veríssimo</button></div>
+                            <div id="agentList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+                    </div>
+
+                    <!-- Aba de Detalhes do Agente -->
+                    <div id="details" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <div id="agentDetailsContainer" class="hidden">
+                                <h2 class="text-2xl font-semibold mb-4 text-red-500">Detalhes do Agente</h2>
+                                <div class="flex border-b border-gray-700 mb-4 flex-wrap">
+                                    <button class="sub-tab-button active" data-sub-tab="general-details">Geral</button>
+                                    <button class="sub-tab-button" data-sub-tab="inventory">Inventário</button>
+                                    <button class="sub-tab-button" data-sub-tab="relationships">Relacionamentos</button>
+                                </div>
+                                <div id="general-details" class="sub-tab-content active grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-3">
+                                        <p><strong class="text-red-400">Nome:</strong> <span id="detailName"></span></p>
+                                        <p><strong class="text-red-400">Sexo:</strong> <span id="detailSex"></span></p>
+                                        <p><strong class="text-red-400">Idade:</strong> <span id="detailAge"></span></p>
+                                        <p><strong class="text-red-400">Experiência:</strong> <span id="detailExperience"></span></p>
+                                        <p><strong class="text-red-400">Físico:</strong> <span id="detailPhysical"></span></p>
+                                        <div>
+                                            <p class="mb-1"><strong class="text-red-400">Saúde:</strong> <span id="detailHealth"></span></p>
+                                            <div class="w-full bg-gray-700 rounded-full h-4 border border-gray-600">
+                                                <div id="detailHealthBar" class="h-full rounded-full transition-all duration-500" style="width: 100%;"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="mb-1"><strong class="text-red-400">Sanidade:</strong> <span id="detailSanity"></span></p>
+                                            <div class="w-full bg-gray-700 rounded-full h-4 border border-gray-600">
+                                                <div id="detailSanityBar" class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 100%;"></div>
+                                            </div>
+                                        </div>
+                                        <p><strong class="text-red-400">Estado Psicológico:</strong> <span id="detailPsychologicalState"></span></p>
+                                        <p><strong class="text-red-400">Atividade:</strong> <span id="detailActivity"></span></p>
+                                        <p><strong class="text-red-400">Local:</strong> <span id="detailLocation"></span></p>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <h3 class="text-xl font-medium text-red-400">Ações</h3>
+                                        <div><label class="block text-sm mb-1">Mover Para:</label><select id="actionLocation"></select><button id="changeLocationBtn" class="mt-2 w-full">Mover</button></div>
+                                        <div><label class="block text-sm mb-1">Realizar Ação:</label><select id="agentAction"></select><select id="interactWithAgentSelect" class="w-full mt-2 hidden"></select><button id="performActionBtn" class="mt-2 w-full">Confirmar Ação</button></div>
+                                    </div>
+                                </div>
+                                <div id="inventory" class="sub-tab-content"><h3 class="text-xl font-medium text-red-400 mb-3">Inventário Equipado</h3><div id="agentInventoryList" class="space-y-4"></div></div>
+                                <div id="relationships" class="sub-tab-content">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h3 class="text-xl font-medium text-red-400">Relacionamentos</h3>
+                                        <button id="addFamilyTieBtn" class="text-sm">Adicionar Laço Familiar</button>
+                                    </div>
+                                    <div class="space-y-3" id="relationshipsList"></div>
+                                </div>
+                            </div>
+                            <div id="noAgentSelected" class="text-center text-gray-400 p-4">Selecione um agente para ver os detalhes.</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de Estoque -->
+                    <div id="stockpile" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Estoque de Itens da Ordem</h2>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div><h3 class="text-xl font-medium text-red-400 mb-2 border-b border-gray-600 pb-2">Armas</h3><div id="stockpileWeapons" class="space-y-2 max-h-80 overflow-y-auto pr-2"></div></div>
+                                <div><h3 class="text-xl font-medium text-red-400 mb-2 border-b border-gray-600 pb-2">Armaduras</h3><div id="stockpileArmors" class="space-y-2 max-h-80 overflow-y-auto pr-2"></div></div>
+                                <div><h3 class="text-xl font-medium text-red-400 mb-2 border-b border-gray-600 pb-2">Equipamentos</h3><div id="stockpileEquipments" class="space-y-2 max-h-80 overflow-y-auto pr-2"></div></div>
+                            </div>
+                            <div id="stockpileActionPane" class="mt-6 pt-4 border-t border-gray-600 hidden">
+                                <h3 class="text-xl font-medium text-red-400 mb-2">Equipar Item: <span id="stockpileItemName"></span></h3>
+                                <div class="flex flex-col sm:flex-row items-center gap-4">
+                                    <select id="stockpileAgentSelect" class="flex-grow"></select>
+                                    <button id="stockpileEquipBtn">Equipar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aba da Loja -->
+                    <div id="shop" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Loja da Ordem</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <h3 class="text-xl font-medium text-red-400 mb-2">Armas</h3>
+                                    <select id="shopWeaponSelect" class="mb-2"></select>
+                                    <button class="buy-item-btn w-full" data-item-type="weapons">Comprar</button>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-medium text-red-400 mb-2">Armaduras</h3>
+                                    <select id="shopArmorSelect" class="mb-2"></select>
+                                    <button class="buy-item-btn w-full" data-item-type="armors">Comprar</button>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-medium text-red-400 mb-2">Equipamentos</h3>
+                                    <select id="shopEquipmentSelect" class="mb-2"></select>
+                                    <button class="buy-item-btn w-full" data-item-type="equipments">Comprar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aba de Missões -->
+                    <div id="missions" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Planejar Missão</h2>
+                            <p class="text-sm text-amber-300 mb-4 bg-black/20 p-2 rounded-md text-center">Aviso: Itens equipados pelos agentes ajudam na porcentagem de sucesso da missão!</p>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Coluna da Esquerda: Listas de Missões -->
+                                <div>
+                                    <div class="flex border-b border-gray-700 mb-4 flex-wrap">
+                                        <button class="sub-tab-button active" data-sub-tab="normal-missions-list">Missões Normais</button>
+                                        <button class="sub-tab-button" data-sub-tab="dangerous-missions-list">Missões Perigosas</button>
+                                    </div>
+                                
+                                    <div id="normal-missions-list" class="sub-tab-content active">
+                                        <button id="generateMissionListBtn" class="w-full mb-4">Gerar Novas Missões</button>
+                                        <div id="missionList" class="space-y-3 max-h-80 overflow-y-auto pr-2 mb-6"></div>
+                                    </div>
+                                
+                                    <div id="dangerous-missions-list" class="sub-tab-content">
+                                        <p id="dangerousMissionTimerDisplay" class="text-center text-red-400 font-bold text-lg mb-4"></p>
+                                        <div id="dangerousMissionList" class="space-y-3 max-h-80 overflow-y-auto pr-2 mb-6">
+                                            <p class="text-center text-gray-400 p-4">Nenhuma ameaça iminente detectada.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card bg-black/20">
+                                        <h3 class="text-xl font-medium text-red-400 mb-3">Criar Missão Personalizada</h3>
+                                        <div class="space-y-3">
+                                            <input type="text" id="customMissionTitle" placeholder="Título da Missão">
+                                            <div>
+                                                <label for="customMissionDifficulty" class="block text-sm mb-1">Dificuldade (1-10):</label>
+                                                <input type="number" id="customMissionDifficulty" value="5" min="1" max="10">
+                                            </div>
+                                            <button id="createCustomMissionBtn" class="w-full">Criar Missão</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Coluna da Direita: Agentes e Resumo -->
+                                <div>
+                                    <h3 class="text-xl font-medium text-red-400 mb-2">Agentes para a Missão</h3>
+                                    <div id="missionAgentSelection" class="space-y-2 max-h-96 overflow-y-auto pr-2"></div>
+                                    <div class="mt-8 text-center p-4 bg-black/20 rounded-lg">
+                                        <h3 class="text-xl font-medium text-red-400 mb-2">Resumo da Missão Selecionada</h3>
+                                        <p class="text-lg text-green-400">Chance de Sucesso: <span id="missionSuccessChance">0%</span></p>
+                                        <button id="startMissionBtn" class="mt-4 text-xl px-8 py-4 bg-green-700 hover:bg-green-600 disabled:opacity-50" disabled>Iniciar Missão</button>
+                                        <button id="cancelActiveMissionBtn" class="mt-2 text-lg px-6 py-3 bg-red-800 hover:bg-red-700">Cancelar Missão Ativa</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de Relatórios de Missão -->
+                    <div id="mission-reports" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <h2 class="text-2xl font-semibold mb-4 text-red-500">Relatórios de Missão</h2>
+                            <div id="missionReportsContainer" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                                <p class="text-center text-gray-400">Nenhuma missão foi concluída ainda.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aba de Simulação (Controle do Tempo) -->
+                    <div id="simulation" class="tab-content grid-cols-1">
+                        <div class="card">
+                            <div class="flex border-b border-gray-700 mb-4 flex-wrap">
+                                <button class="sub-tab-button active" data-sub-tab="game-controls">Controles</button>
+                                <button class="sub-tab-button" data-sub-tab="game-cheats">Trapaças</button>
+                            </div>
+
+                            <div id="game-controls" class="sub-tab-content active text-center">
+                                <h2 class="text-2xl font-semibold mb-4 text-red-500">Controles do Jogo</h2>
+                                <div class="flex justify-center gap-4 mb-4">
+                                    <button id="startTimeBtn" class="text-xl px-6 py-3 bg-green-700 hover:bg-green-600">Continuar</button>
+                                    <button id="stopTimeBtn" class="text-xl px-6 py-3 bg-yellow-600 hover:bg-yellow-500">Parar</button>
+                                </div>
+                                <button id="passDayBtn" class="text-xl px-6 py-3">Avançar para o Próximo Dia</button>
+                                <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <button id="saveGameBtn" class="bg-gray-600 hover:bg-gray-700">Salvar Jogo</button>
+                                    <button id="loadGameBtn" class="bg-gray-600 hover:bg-gray-700">Carregar Jogo</button>
+                                    <button id="newGameBtn" class="bg-red-800 hover:bg-red-700">Novo Jogo</button>
+                                    <input type="file" id="loadGameInput" class="hidden" accept=".json">
+                                </div>
+                            </div>
+                            <div id="game-cheats" class="sub-tab-content text-center">
+                                <h2 class="text-2xl font-semibold mb-4 text-red-500">Trapaças</h2>
+                                <div class="grid grid-cols-1 gap-4">
+                                    <button id="superFastTimeBtn" class="text-xl px-6 py-3 bg-orange-600 hover:bg-orange-500">Tempo Super Rápido</button>
+                                    <button id="forceRecruitBtn" class="text-xl px-6 py-3">Forçar Novos Recrutas</button>
+                                    <button id="cheatAddCustomAgentBtn" class="text-xl px-6 py-3">Adicionar Agente Personalizado</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DADOS GLOBAIS DO JOGO ---
+        let agents = [];
+        let potentialRecruits = [];
+        let itemStockpile = [];
+        let availableMissions = [];
+        let dangerousMissions = [];
+        let missionReports = [];
+        let fallenAgents = [];
+        let selectedAgent = null;
+        let selectedMissionForStart = null;
+        let selectedAgentsForMission = [];
+        let selectedStockpileItem = null;
+        let currentVerissimoAgentId = null;
+        let playerMoney = 5000;
+        let gameStartDate = null;
+        let gameDate = new Date();
+        let gameLoopInterval = null;
+        let dangerousMissionCountdown = 0; // Em segundos
+        let dangerousMissionInterval = null;
+        let recruitCountdown = 0; // Em segundos
+        let recruitInterval = null;
+        let timeMultiplier = 1;
+
+        // --- DADOS CONSTANTES ---
+        const maleNames = ["Arthur", "Bernardo", "Carlos", "Daniel", "Eduardo", "Felipe", "Gustavo", "Hugo", "Igor", "João", "Lucas", "Mateus", "Pedro", "Rafael", "Thiago", "James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles", "Javier", "Carlos", "Miguel", "José", "Juan", "David", "Luis", "Javier", "Francisco", "Antonio"];
+        const femaleNames = ["Ana", "Beatriz", "Carla", "Diana", "Emília", "Fernanda", "Gabriela", "Helena", "Isabela", "Júlia", "Larissa", "Mariana", "Patrícia", "Renata", "Sophia", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen", "Maria", "Carmen", "Ana", "Isabel", "Laura", "Dolores", "Pilar", "Teresa", "Rosario", "Sofia"];
+        const neutralNames = ["Alex", "Chris", "Kai", "Morgan", "Sam", "Taylor", "Jamie", "Dakota", "Jordan", "Charlie"];
+        const surnames = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Alves", "Pereira", "Lima", "Gomes", "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Wilson", "Garcia", "Fernandez", "Gonzalez", "Rodriguez", "Lopez", "Martinez", "Sanchez", "Perez", "Gomez", "Martin"];
+        const physicalDescriptions = ["Atlético", "Magro", "Forte", "Resistente", "Alto", "Baixo", "Musculoso", "Discreto", "Robusto", "Flexível", "Cicatrizes de batalha", "Olhar penetrante"];
+        const missionTitles = ["Investigação na Mansão Abandonada", "Resgate no Hospital Mal-Assombrado", "Contenção de Entidade no Museu", "Busca por Artefato Amaldiçoado", "Eliminação de Culto", "Proteção de Testemunha Paranormal", "Rastreamento de Anomalia", "Exploração de Ruínas Esquecidas", "Desativação de Ritual Sombrio"];
+        const dangerousMissionBosses = ["O Anfitrião", "A Dama de Sangue", "O Viajante", "O Magistrado", "O Parasita de Dimensões", "Kian", "Gal", "O Diabo", "O Ajudante"];
+        const missionItems = {
+            weapons: [{id:'faca',name:'Faca',cost:50,successBonus:5},{id:'punhal',name:'Punhal',cost:50,successBonus:5},{id:'bastao',name:'Bastão',cost:80,successBonus:7},{id:'martelo',name:'Martelo',cost:90,successBonus:8},{id:'machete',name:'Machete',cost:100,successBonus:9},{id:'soqueira',name:'Soqueira',cost:75,successBonus:7},{id:'pistola_pequena',name:'Pistola (Cal. Pequeno)',cost:200,successBonus:15},{id:'revolver_pequeno',name:'Revólver (Cal. Pequeno)',cost:250,successBonus:18},{id:'espada_curta',name:'Espada Curta',cost:300,successBonus:20},{id:'escopeta_pequena',name:'Escopeta (Cal. Pequeno)',cost:400,successBonus:25},{id:'submetralhadora',name:'Submetralhadora',cost:500,successBonus:30},{id:'besta',name:'Besta',cost:350,successBonus:22},{id:'espada_longa',name:'Espada Longa',cost:600,successBonus:35},{id:'fuzil_assalto',name:'Fuzil de Assalto',cost:800,successBonus:45},{id:'escopeta_grande',name:'Escopeta (Cal. Grande)',cost:700,successBonus:40},{id:'metralhadora',name:'Metralhadora',cost:1000,successBonus:50},{id:'katana',name:'Katana',cost:850,successBonus:48}],
+            armors: [{id:'roupas_reforcadas',name:'Roupas Reforçadas',cost:100,successBonus:5},{id:'armadura_leve',name:'Armadura Leve',cost:300,successBonus:15},{id:'armadura_media',name:'Armadura Média',cost:500,successBonus:25},{id:'armadura_pesada',name:'Armadura Pesada',cost:800,successBonus:40},{id:'colete_leve',name:'Colete Leve',cost:300,successBonus:15},{id:'colete_medio',name:'Colete Médio',cost:500,successBonus:25},{id:'colete_pesado',name:'Colete Pesado',cost:800,successBonus:40}],
+            equipments: [{id:'kit_pericia',name:'Kit de Perícia',cost:200,successBonus:15},{id:'utensilio',name:'Utensílio',cost:50,successBonus:2},{id:'vestimenta',name:'Vestimenta',cost:80,successBonus:3},{id:'granada_atordoamento',name:'Granada de Atordoamento',cost:150,successBonus:10},{id:'granada_fragmentacao',name:'Granada de Fragmentação',cost:180,successBonus:12},{id:'granada_fumaca',name:'Granada de Fumaça',cost:100,successBonus:7},{id:'granada_incendiaria',name:'Granada Incendiária',cost:200,successBonus:14},{id:'lanterna',name:'Lanterna',cost:30,successBonus:2},{id:'kit_primeiros_socorros',name:'Kit Primeiros Socorros',cost:150,successBonus:10}]
+        };
+        const relationshipTiers = [{threshold:0,name:"Neutro"},{threshold:20,name:"Conhecido(a)"},{threshold:40,name:"Amigo(a)"},{threshold:60,name:"Melhor Amigo(a)"},{threshold:80,name:"Paixão"},{threshold:100,name:"Romance"}];
+        const locationActivities = {
+            "Enfermaria": ["Descansar", "Recuperar-se"],
+            "Salão Principal": ["Descansar", "Interagir com Agente..."],
+            "Sala de Armas": ["Treinar", "Verificar Armas"],
+            "Banheiro": ["Descansar"],
+            "Sala de Computadores": ["Estudar Rituais"],
+            "Sala de Rituais": ["Estudar Rituais", "Meditar"],
+            "Sala do Veríssimo": ["Supervisionando a Ordem"],
+            "Celas": ["Patrulhar"],
+            "Fora da Ordem": ["Visitar família", "Ir ao cinema", "Passear no parque"],
+            "Entrando na Ordem": ["Integrar"]
+        };
+        const psychologicalStates = [
+            { threshold: 80, state: "Estável" },
+            { threshold: 50, state: "Abalado" },
+            { threshold: 20, state: "Instável" },
+            { threshold: 0, state: "Quebrado" }
+        ];
+        const orderEvents = [
+            { id: "party", name: "Festa de Confraternização", cost: 1000, sanityBoost: 15, description: "Aumenta a moral da equipe com uma festa bem merecida." },
+            { id: "therapy", name: "Sessão de Terapia em Grupo", cost: 2500, sanityBoost: 30, description: "Ajuda os agentes a processarem os horrores que enfrentam." },
+            { id: "movie_night", name: "Noite de Cinema", cost: 500, sanityBoost: 10, description: "Uma noite relaxante com filmes para descontrair." }
+        ];
+
+        // --- CLASSES ---
+        class Agent {
+            constructor(name, sex, age, experience, physical) {
+                this.id = crypto.randomUUID();
+                this.name = name;
+                this.sex = sex;
+                this.age = age;
+                this.experience = experience;
+                this.physical = physical;
+                this.health = 100;
+                this.sanity = 100;
+                this.psychologicalState = "Estável";
+                this.activity = "Aguardando integração";
+                this.location = "Entrando na Ordem";
+                this.relationships = {};
+                this.family = {}; // { spouse: id, parents: [ids], children: [ids], siblings: [ids] }
+                this.isVerissimo = false;
+                this.equippedWeapon = null;
+                this.equippedArmor = null;
+                this.equippedEquipment = null;
+                this.onMission = null;
+                this.missionCompletionTime = 0;
+                this.actionCompletionTime = 0;
+            }
+        }
+
+        // --- FUNÇÕES DE INICIALIZAÇÃO E CONTROLE DE TEMPO ---
+        function startGame(year, month, day) {
+            gameDate = new Date(year, month, day, 8, 0, 0);
+            gameStartDate = new Date(gameDate);
+            document.getElementById('dateStartModal').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            initialize();
+        }
+
+        function initialize() {
+            selectAgent(null);
+            generateRecruitList();
+            generateRandomMissions();
+            populateShopSelectors();
+            populateLocationAndActionSelectors();
+            renderOrderEvents();
+            startDangerousMissionTimer();
+            startRecruitTimer();
+            updateUI();
+            showTab('order-details');
+            startTime(); 
+        }
+
+        function setTimeSpeed(speed, multiplier) {
+            timeMultiplier = multiplier;
+            clearInterval(gameLoopInterval);
+            clearInterval(dangerousMissionInterval);
+            clearInterval(recruitInterval);
+            gameLoopInterval = null;
+            dangerousMissionInterval = null;
+            recruitInterval = null;
+            if (speed > 0) {
+                gameLoopInterval = setInterval(gameTick, speed);
+                startDangerousMissionTimer();
+                startRecruitTimer();
+            }
+        }
+
+        function startTime() {
+            setTimeSpeed(500, 1); // Velocidade Normal
+            showMessage("O tempo está passando...", "success");
+        }
+
+        function setSuperFastTime() {
+            setTimeSpeed(50, 10); // Velocidade Super Rápida
+            showMessage("Tempo super rápido ativado!", "success");
+        }
+
+        function stopTime() {
+            setTimeSpeed(0, 0); // Parar tempo
+            showMessage("Tempo parado.", "error");
+        }
+
+        function gameTick() {
+            const timePassedMs = 60 * 1000 * timeMultiplier;
+            gameDate.setTime(gameDate.getTime() + timePassedMs);
+            
+            let needsStaticUpdate = false;
+
+            agents.forEach(agent => {
+                // Sanity decay is a constant process
+                agent.sanity = Math.max(0, agent.sanity - (0.005 * timeMultiplier));
+                updatePsychologicalState(agent);
+
+                // Continuous recovery
+                if (!agent.onMission) {
+                    if (agent.activity === 'Recuperando-se') {
+                        agent.health = Math.min(100, agent.health + (0.1 * timeMultiplier));
+                        if (agent.health >= 100) {
+                            agent.health = 100;
+                            agent.location = "Salão Principal";
+                            performAction(agent, "Descansar");
+                            needsStaticUpdate = true;
+                        }
+                    }
+                    if (agent.activity === 'Descansando' || agent.activity === 'Meditando') {
+                        agent.sanity = Math.min(100, agent.sanity + (0.05 * timeMultiplier));
+                    }
+                }
+
+                // Check for mission completion
+                if (agent.onMission && gameDate.getTime() >= agent.missionCompletionTime) {
+                    resolveMission(agent);
+                    needsStaticUpdate = true;
+                }
+                // Check for action completion (only if not on mission)
+                if (!agent.onMission && agent.actionCompletionTime > 0 && gameDate.getTime() >= agent.actionCompletionTime) {
+                    completeAgentAction(agent);
+                    needsStaticUpdate = true;
+                }
+            });
+            
+            if (needsStaticUpdate) {
+                updateUI();
+            } else {
+                // Update only dynamic elements to prevent UI flickering
+                updateDynamicUI();
+            }
+        }
+
+        function passDay() {
+            gameDate.setDate(gameDate.getDate() + 1);
+            gameDate.setHours(8, 0, 0, 0);
+            agents.forEach(agent => {
+                if (!agent.onMission && !agent.isVerissimo) {
+                    agent.health = Math.max(0, agent.health - getRandomNumber(1, 3));
+                    agent.sanity = Math.max(0, agent.sanity - getRandomNumber(1, 4));
+                    updatePsychologicalState(agent);
+                }
+                if (agent.health < 30 && agent.location !== "Enfermaria" && !agent.onMission) {
+                    agent.location = "Enfermaria";
+                    performAction(agent, "Recuperar-se");
+                }
+                if (agent.location === "Enfermaria" && agent.health >= 100) {
+                    agent.health = 100;
+                    agent.location = "Salão Principal";
+                    performAction(agent, "Descansar");
+                }
+            });
+            showMessage("Um novo dia começou na Ordem.", "success");
+            updateUI();
+        }
+        
+        // --- FUNÇÕES DE UI E RENDERIZAÇÃO ---
+        function updateUI() {
+            renderAgentList();
+            renderStockpile();
+            renderAvailableAgentsForMission();
+            renderOrderDetails();
+            renderMissionReports();
+            if (selectedAgent) {
+                updateAgentDetailsPane();
+                renderRelationships();
+                renderAgentInventory();
+            }
+            updateMoneyDisplay();
+            updateGameClock();
+        }
+
+        function updateDynamicUI() {
+            updateGameClock();
+            // Update timers on agent cards
+            agents.forEach(agent => {
+                if (agent.onMission) {
+                    const agentCard = document.getElementById(`agent-${agent.id}`);
+                    if (agentCard) {
+                        const remainingTime = agent.missionCompletionTime - gameDate.getTime();
+                        const timeElement = agentCard.querySelector('.text-amber-400');
+                        if (timeElement) {
+                            timeElement.textContent = `Retorna em: ${formatDuration(remainingTime)}`;
+                        }
+                    }
+                }
+            });
+        }
+
+        function showMessage(message, type = 'success', duration = 4000) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = '';
+            box.classList.add('show', type);
+            setTimeout(() => box.classList.remove('show'), duration);
+        }
+
+        function updateGameClock() {
+            const clock = document.getElementById('gameClockDisplay');
+            if(clock) {
+                const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                clock.textContent = gameDate.toLocaleDateString('pt-BR', options).replace(',', ' -');
+            }
+        }
+        
+        function updateMoneyDisplay() {
+            document.getElementById('playerMoneyDisplay').textContent = playerMoney;
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => {c.classList.remove('active'); c.style.display = 'none';});
+            
+            const tab = document.getElementById(tabId);
+            const button = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+
+            if (tab && button) {
+                tab.classList.add('active');
+                
+                // Ativa todos os botões com o mesmo data-tab (para sincronizar menu mobile e desktop)
+                document.querySelectorAll(`.tab-button[data-tab="${tabId}"]`).forEach(b => b.classList.add('active'));
+
+                tab.style.display = 'grid';
+            }
+            if (window.innerWidth < 768) {
+                document.getElementById('mobileMenuContainer').classList.add('hidden');
+            }
+        }
+
+        function showSubTab(subTabId) {
+            const subTabButton = document.querySelector(`.sub-tab-button[data-sub-tab="${subTabId}"]`);
+            if (!subTabButton) return;
+            const parentCard = subTabButton.closest('.card');
+            
+            parentCard.querySelectorAll('.sub-tab-button').forEach(b => b.classList.remove('active'));
+            parentCard.querySelectorAll('.sub-tab-content').forEach(c => {c.classList.remove('active'); c.style.display = 'none';});
+            
+            const subContent = parentCard.querySelector(`#${subTabId}`);
+            
+            if(subTabButton && subContent) {
+                subTabButton.classList.add('active');
+                subContent.classList.add('active');
+                subContent.style.display = 'block';
+            }
+        }
+
+        // --- RENDERIZAÇÃO DE DETALHES DO AGENTE ---
+        function updateAgentDetailsPane() {
+            if (!selectedAgent) return;
+            document.getElementById('detailName').textContent = selectedAgent.isVerissimo ? `${selectedAgent.name} (Veríssimo)` : selectedAgent.name;
+            document.getElementById('detailSex').textContent = selectedAgent.sex;
+            document.getElementById('detailAge').textContent = selectedAgent.age;
+            document.getElementById('detailExperience').textContent = selectedAgent.experience;
+            document.getElementById('detailPhysical').textContent = selectedAgent.physical;
+            document.getElementById('detailHealth').textContent = selectedAgent.health.toFixed(0);
+            document.getElementById('detailSanity').textContent = selectedAgent.sanity.toFixed(0);
+            document.getElementById('detailPsychologicalState').textContent = selectedAgent.psychologicalState;
+            document.getElementById('detailActivity').textContent = selectedAgent.activity;
+            document.getElementById('detailLocation').textContent = selectedAgent.location;
+
+            // Atualiza barra de saúde
+            const healthBar = document.getElementById('detailHealthBar');
+            const healthPercent = selectedAgent.health;
+            healthBar.style.width = `${healthPercent}%`;
+            if (healthPercent > 60) healthBar.style.background = 'linear-gradient(to right, #22c55e, #86efac)';
+            else if (healthPercent > 30) healthBar.style.background = 'linear-gradient(to right, #f59e0b, #fcd34d)';
+            else healthBar.style.background = 'linear-gradient(to right, #ef4444, #fca5a5)';
+            
+            // Atualiza barra de sanidade
+            const sanityBar = document.getElementById('detailSanityBar');
+            sanityBar.style.width = `${selectedAgent.sanity}%`;
+
+            // Popula dropdown de ações baseado no local
+            const actionSelect = document.getElementById('agentAction');
+            const validActions = locationActivities[selectedAgent.location] || ["Descansar"];
+            actionSelect.innerHTML = '';
+            validActions.forEach(action => {
+                actionSelect.innerHTML += `<option value="${action}">${action.replace('...', '')}</option>`;
+            });
+
+            // Popula o dropdown de interação
+            const interactSelect = document.getElementById('interactWithAgentSelect');
+            interactSelect.innerHTML = '<option value="">Selecione...</option>';
+            agents.filter(a => a.id !== selectedAgent.id && a.location === selectedAgent.location).forEach(other => {
+                interactSelect.innerHTML += `<option value="${other.id}">${other.name}</option>`;
+            });
+        }
+
+        function renderAgentInventory() {
+            const listDiv = document.getElementById('agentInventoryList');
+            if (!selectedAgent || !listDiv) return;
+            listDiv.innerHTML = '';
+            
+            const createItemEntry = (item, type, typeKey) => {
+                if (!item) return;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'p-2 bg-gray-700 rounded-md flex justify-between items-center';
+                itemDiv.innerHTML = `<span><strong class="text-red-300">${type}:</strong> ${item.name}</span>`;
+                const unequipBtn = document.createElement('button');
+                unequipBtn.textContent = 'Desequipar';
+                unequipBtn.className = 'bg-red-800 hover:bg-red-700 text-sm px-2 py-1';
+                unequipBtn.onclick = () => unequipItem(selectedAgent.id, typeKey);
+                itemDiv.appendChild(unequipBtn);
+                listDiv.appendChild(itemDiv);
+            };
+
+            createItemEntry(selectedAgent.equippedWeapon, 'Arma', 'weapon');
+            createItemEntry(selectedAgent.equippedArmor, 'Armadura', 'armor');
+            createItemEntry(selectedAgent.equippedEquipment, 'Equipamento', 'equipment');
+
+            if (!selectedAgent.equippedWeapon && !selectedAgent.equippedArmor && !selectedAgent.equippedEquipment) {
+                listDiv.innerHTML = '<p class="text-gray-400">Nenhum item equipado.</p>';
+            }
+        }
+        
+        function renderRelationships() {
+            const listDiv = document.getElementById('relationshipsList');
+            if (!selectedAgent) return;
+            const otherAgents = agents.filter(a => a.id !== selectedAgent.id);
+            listDiv.innerHTML = otherAgents.length === 0 ? '<p class="text-center text-gray-400">Não há outros agentes.</p>' : '';
+            otherAgents.forEach(other => {
+                const value = selectedAgent.relationships[other.id] || 0;
+                const status = relationshipTiers.slice().reverse().find(t => value >= t.threshold)?.name || 'Neutro';
+                let familyTie = getFamilyTie(selectedAgent, other);
+
+                const item = document.createElement('div');
+                item.className = 'mb-2';
+                item.innerHTML = `
+                    <p class="text-sm text-gray-300"><strong class="text-red-300">${other.name}:</strong> ${status} ${familyTie ? `<span class="text-yellow-300">(${familyTie})</span>` : ''}</p>
+                    <div class="w-full bg-gray-600 rounded-full h-2.5"><div class="bg-blue-500 h-2.5 rounded-full" style="width: ${value}%;"></div></div>`;
+                listDiv.appendChild(item);
+            });
+        }
+
+        // --- FUNÇÕES DE AGENTES E RECRUTAMENTO ---
+        const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const getRandomNumber = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        function updatePsychologicalState(agent) {
+            const oldState = agent.psychologicalState;
+            const state = psychologicalStates.find(s => agent.sanity >= s.threshold);
+            if (state) {
+                agent.psychologicalState = state.state;
+            }
+            return oldState !== agent.psychologicalState;
+        }
+
+        function createRandomAgentObject() {
+            const sex = getRandomItem(["Masculino", "Feminino", "Não Binário"]);
+            let firstName = sex === "Masculino" ? getRandomItem(maleNames) : (sex === "Feminino" ? getRandomItem(femaleNames) : getRandomItem(neutralNames));
+            let lastName = getRandomItem(surnames);
+            return new Agent(`${firstName} ${lastName}`, sex, getRandomNumber(18, 50), getRandomNumber(0, 70), getRandomItem(physicalDescriptions));
+        }
+
+        function generateRecruitList() {
+            potentialRecruits = Array.from({ length: getRandomNumber(3, 5) }, createRandomAgentObject);
+            renderRecruitList();
+        }
+
+        function renderRecruitList() {
+            const recruitListDiv = document.getElementById('recruitList');
+            recruitListDiv.innerHTML = potentialRecruits.length === 0 ? '<p class="text-center text-gray-400">Nenhum recruta disponível.</p>' : '';
+            potentialRecruits.forEach(recruit => {
+                const recruitCard = document.createElement('div');
+                recruitCard.className = 'card flex items-center justify-between bg-gray-700';
+                recruitCard.innerHTML = `<div><h3 class="text-xl font-medium text-red-300">${recruit.name}</h3><p class="text-sm text-gray-400">Sexo: ${recruit.sex} | Idade: ${recruit.age}</p><p class="text-sm text-gray-400">Exp: ${recruit.experience} | Físico: ${recruit.physical}</p></div><button class="recruit-agent-btn" data-agent-id="${recruit.id}">Recrutar</button>`;
+                recruitListDiv.appendChild(recruitCard);
+            });
+            document.querySelectorAll('.recruit-agent-btn').forEach(button => button.addEventListener('click', (event) => recruitAgent(event.target.dataset.agentId)));
+        }
+
+        function addAgent(newAgent) {
+            agents.push(newAgent);
+            agents.forEach(existingAgent => {
+                if (existingAgent.id !== newAgent.id) {
+                    newAgent.relationships[existingAgent.id] = 0;
+                    existingAgent.relationships[newAgent.id] = 0;
+                }
+            });
+            
+            performAction(newAgent, "Integrar");
+            updateUI();
+            selectAgent(newAgent.id);
+            showMessage(`${newAgent.name} foi adicionado à Ordem!`, 'success');
+        }
+
+        function recruitAgent(agentId) {
+            const index = potentialRecruits.findIndex(r => r.id === agentId);
+            if (index > -1) {
+                const newAgent = potentialRecruits.splice(index, 1)[0];
+                addAgent(newAgent);
+                renderRecruitList();
+            }
+        }
+
+        function createCustomAgent() {
+            const name = document.getElementById('agentName').value.trim();
+            const sex = document.getElementById('agentSex').value;
+            const age = parseInt(document.getElementById('agentAge').value);
+            const experience = parseInt(document.getElementById('agentExperience').value);
+            const physical = document.getElementById('agentPhysical').value.trim();
+
+            if (!name || !physical || isNaN(age) || isNaN(experience)) return showMessage('Preencha todos os campos.', 'error');
+            
+            const newAgent = new Agent(name, sex, age, experience, physical);
+            addAgent(newAgent);
+            
+            document.getElementById('customAgentFormElement').reset();
+            document.getElementById('customAgentForm').classList.add('hidden');
+        }
+
+        function renderAgentList() {
+            const agentListDiv = document.getElementById('agentList');
+            agentListDiv.innerHTML = agents.length === 0 ? '<p class="text-center text-gray-400 col-span-full">Nenhum agente recrutado.</p>' : '';
+            agents.forEach(agent => {
+                const agentCard = document.createElement('div');
+                agentCard.id = `agent-${agent.id}`;
+                agentCard.className = `card cursor-pointer hover:bg-gray-700 transition duration-200 ${selectedAgent?.id === agent.id ? 'border-2 border-red-400' : ''} ${agent.onMission ? 'agent-in-mission' : ''}`;
+                let displayName = agent.isVerissimo ? `${agent.name} (Veríssimo)` : agent.name;
+                let cardContent = `<h3 class="text-xl font-medium text-red-300">${displayName}</h3><p class="text-sm text-gray-400">Exp: ${agent.experience} | Saúde: ${agent.health.toFixed(0)}</p>`;
+                if (agent.onMission) {
+                    const remainingTime = agent.missionCompletionTime - gameDate.getTime();
+                    cardContent += `<p class="text-sm text-amber-400">Retorna em: ${formatDuration(remainingTime)}</p>`;
+                } else {
+                    cardContent += `<p class="text-sm text-gray-400">Local: ${agent.location}</p><p class="text-sm text-gray-400">Atividade: ${agent.activity}</p>`;
+                }
+                agentCard.innerHTML = cardContent;
+                agentCard.addEventListener('click', () => {
+                    if (!agent.onMission) selectAgent(agent.id);
+                });
+                agentListDiv.appendChild(agentCard);
+            });
+        }
+
+        function selectAgent(agentId) {
+            selectedAgent = agents.find(agent => agent.id === agentId);
+            const promoteBtn = document.getElementById('promoteToVerissimoBtn');
+            const noAgentDiv = document.getElementById('noAgentSelected');
+            const detailsDiv = document.getElementById('agentDetailsContainer');
+            
+            if (selectedAgent) {
+                noAgentDiv.classList.add('hidden');
+                detailsDiv.classList.remove('hidden');
+                promoteBtn.disabled = selectedAgent.isVerissimo || selectedAgent.onMission;
+            } else {
+                noAgentDiv.classList.remove('hidden');
+                detailsDiv.classList.add('hidden');
+                promoteBtn.disabled = true;
+            }
+            renderAgentList();
+            updateAgentDetailsPane();
+            renderRelationships();
+            renderAgentInventory();
+        }
+
+        function promoteToVerissimo() {
+            if (!selectedAgent || selectedAgent.isVerissimo) return;
+            if (selectedAgent.onMission) {
+                showMessage("Este agente está em missão no momento.", "error");
+                return;
+            }
+            const oldVerissimo = agents.find(a => a.id === currentVerissimoAgentId);
+            if (oldVerissimo) {
+                oldVerissimo.isVerissimo = false;
+                performAction(oldVerissimo, "Descansar");
+            }
+            
+            selectedAgent.isVerissimo = true;
+            selectedAgent.location = "Sala do Veríssimo";
+            selectedAgent.activity = "Supervisionando a Ordem";
+            currentVerissimoAgentId = selectedAgent.id;
+            showMessage(`${selectedAgent.name} foi promovido a Veríssimo!`, 'success');
+            
+            document.getElementById('promoteToVerissimoBtn').disabled = true;
+            updateUI();
+        }
+        
+        // --- FUNÇÕES DE ITENS E ESTOQUE ---
+        function populateShopSelectors() {
+            const populate = (selId, items) => {
+                const select = document.getElementById(selId);
+                select.innerHTML = '';
+                items.forEach(item => select.innerHTML += `<option value="${item.id}">${item.name} ($${item.cost})</option>`);
+            };
+            populate('shopWeaponSelect', missionItems.weapons);
+            populate('shopArmorSelect', missionItems.armors);
+            populate('shopEquipmentSelect', missionItems.equipments);
+        }
+
+        function buyItem(itemType) {
+            let selectId;
+            if (itemType === 'weapons') selectId = 'shopWeaponSelect';
+            else if (itemType === 'armors') selectId = 'shopArmorSelect';
+            else if (itemType === 'equipments') selectId = 'shopEquipmentSelect';
+            
+            const itemId = document.getElementById(selectId).value;
+            if (!itemId) return;
+
+            const itemData = missionItems[itemType].find(i => i.id === itemId);
+            if (playerMoney < itemData.cost) return showMessage("Dinheiro insuficiente.", "error");
+
+            playerMoney -= itemData.cost;
+            const newItemInstance = { ...itemData, stockpileId: crypto.randomUUID(), category: itemType };
+            itemStockpile.push(newItemInstance);
+            
+            showMessage(`${itemData.name} comprado e adicionado ao estoque.`, 'success');
+            updateUI();
+        }
+
+        function renderStockpile() {
+            const divs = {
+                weapons: document.getElementById('stockpileWeapons'),
+                armors: document.getElementById('stockpileArmors'),
+                equipments: document.getElementById('stockpileEquipments')
+            };
+            Object.values(divs).forEach(d => { if (d) d.innerHTML = ''; });
+
+            const renderCategory = (div, category) => {
+                if (!div) return;
+                const items = itemStockpile.filter(i => i.category === category);
+                if (items.length === 0) {
+                    div.innerHTML = '<p class="text-gray-400">Nenhum item.</p>';
+                } else {
+                    items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.textContent = item.name;
+                        itemDiv.className = `p-2 rounded-md cursor-pointer hover:bg-red-500 ${selectedStockpileItem?.stockpileId === item.stockpileId ? 'bg-red-600' : 'bg-gray-700'}`;
+                        itemDiv.onclick = () => selectStockpileItem(item.stockpileId);
+                        div.appendChild(itemDiv);
+                    });
+                }
+            };
+            renderCategory(divs.weapons, 'weapons');
+            renderCategory(divs.armors, 'armors');
+            renderCategory(divs.equipments, 'equipments');
+        }
+
+        function selectStockpileItem(stockpileId) {
+            selectedStockpileItem = itemStockpile.find(i => i.stockpileId === stockpileId);
+            const actionPane = document.getElementById('stockpileActionPane');
+            if (selectedStockpileItem) {
+                document.getElementById('stockpileItemName').textContent = selectedStockpileItem.name;
+                const agentSelect = document.getElementById('stockpileAgentSelect');
+                agentSelect.innerHTML = '<option value="">Selecione um agente...</option>';
+                agents.filter(a => !a.onMission).forEach(agent => {
+                    agentSelect.innerHTML += `<option value="${agent.id}">${agent.name}</option>`;
+                });
+                actionPane.classList.remove('hidden');
+            } else {
+                actionPane.classList.add('hidden');
+            }
+            renderStockpile();
+        }
+
+        function equipItemFromStockpile() {
+            const agentId = document.getElementById('stockpileAgentSelect').value;
+            if (!selectedStockpileItem || !agentId) return showMessage("Selecione um item e um agente.", "error");
+            const agent = agents.find(a => a.id === agentId);
+            if(!agent) return;
+
+            let propMap = { weapons: 'equippedWeapon', armors: 'equippedArmor', equipments: 'equippedEquipment' };
+            const prop = propMap[selectedStockpileItem.category];
+            if (agent[prop]) itemStockpile.push(agent[prop]);
+            
+            agent[prop] = selectedStockpileItem;
+
+            itemStockpile = itemStockpile.filter(i => i.stockpileId !== selectedStockpileItem.stockpileId);
+            showMessage(`${selectedStockpileItem.name} equipado em ${agent.name}.`, 'success');
+            
+            selectedStockpileItem = null;
+            document.getElementById('stockpileActionPane').classList.add('hidden');
+            updateUI();
+        }
+
+        function unequipItem(agentId, itemTypeKey) {
+            const agent = agents.find(a => a.id === agentId);
+            if (!agent) return;
+            
+            let prop;
+            if(itemTypeKey === 'weapon') prop = 'equippedWeapon';
+            else if(itemTypeKey === 'armor') prop = 'equippedArmor';
+            else if(itemTypeKey === 'equipment') prop = 'equippedEquipment';
+            
+            const itemToUnequip = agent[prop];
+            if (itemToUnequip) {
+                agent[prop] = null;
+                itemStockpile.push(itemToUnequip);
+                showMessage(`${itemToUnequip.name} foi movido para o estoque.`, 'success');
+            }
+            updateUI();
+        }
+        
+        // --- FUNÇÕES DE MISSÃO ---
+        function startDangerousMissionTimer() {
+            if (dangerousMissionInterval) clearInterval(dangerousMissionInterval);
+            if (dangerousMissionCountdown <= 0) {
+                dangerousMissionCountdown = 5 * 60; // 5 minutos em segundos
+            }
+            
+            const intervalSpeed = timeMultiplier > 1 ? 100 : 1000; // 10x mais rápido em modo super rápido
+
+            dangerousMissionInterval = setInterval(() => {
+                dangerousMissionCountdown--;
+                renderDangerousMissionTimer();
+                if (dangerousMissionCountdown <= 0) {
+                    generateDangerousMission();
+                    dangerousMissionCountdown = 5 * 60; // Reinicia o timer
+                }
+            }, intervalSpeed);
+        }
+        
+        function renderDangerousMissionTimer() {
+            const timerDisplay = document.getElementById('dangerousMissionTimerDisplay');
+            if (timerDisplay) {
+                const minutes = Math.floor(dangerousMissionCountdown / 60);
+                const seconds = dangerousMissionCountdown % 60;
+                timerDisplay.textContent = `Nova ameaça em: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+        
+        function startRecruitTimer() {
+            if (recruitInterval) clearInterval(recruitInterval);
+            if (recruitCountdown <= 0) {
+                recruitCountdown = 3 * 60; // 3 minutos em segundos
+            }
+            
+            const intervalSpeed = timeMultiplier > 1 ? 100 : 1000;
+
+            recruitInterval = setInterval(() => {
+                recruitCountdown--;
+                renderRecruitTimer();
+                if (recruitCountdown <= 0) {
+                    generateRecruitList();
+                    recruitCountdown = 3 * 60; // Reinicia o timer
+                }
+            }, intervalSpeed);
+        }
+
+        function renderRecruitTimer() {
+            const timerDisplay = document.getElementById('recruitTimerDisplay');
+            if (timerDisplay) {
+                const minutes = Math.floor(recruitCountdown / 60);
+                const seconds = recruitCountdown % 60;
+                timerDisplay.textContent = `Novos recrutas em: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+
+        function generateDangerousMission() {
+            const difficulty = getRandomNumber(11, 15);
+            const boss = getRandomItem(dangerousMissionBosses);
+            const mission = {
+                id: crypto.randomUUID(),
+                title: `Enfrentar Chefe: ${boss}`,
+                difficulty,
+                reward: getRandomNumber(400, 600) * difficulty,
+                selected: false,
+                isDangerous: true
+            };
+            dangerousMissions.unshift(mission);
+            showMessage(`ALERTA: Uma nova Missão Perigosa apareceu!`, 'dangerous', 6000);
+            renderDangerousMissionsList();
+        }
+
+        function generateRandomMissions() {
+            availableMissions = Array.from({ length: getRandomNumber(3, 5) }, () => {
+                const difficulty = getRandomNumber(1, 10);
+                return { id: crypto.randomUUID(), title: getRandomItem(missionTitles), difficulty, reward: getRandomNumber(100, 200) * difficulty, selected: false, isDangerous: false };
+            });
+            renderNormalMissionsList();
+        }
+
+        function createCustomMission() {
+            const title = document.getElementById('customMissionTitle').value.trim();
+            const difficulty = parseInt(document.getElementById('customMissionDifficulty').value);
+
+            if (!title || isNaN(difficulty) || difficulty < 1 || difficulty > 10) {
+                return showMessage("Por favor, insira um título válido e uma dificuldade entre 1 e 10.", "error");
+            }
+
+            const mission = {
+                id: crypto.randomUUID(),
+                title,
+                difficulty,
+                reward: getRandomNumber(100, 200) * difficulty,
+                selected: false,
+                isDangerous: false
+            };
+            availableMissions.push(mission);
+            showMessage(`Missão "${title}" criada com sucesso!`, 'success');
+            document.getElementById('customMissionTitle').value = '';
+            document.getElementById('customMissionDifficulty').value = 5;
+            renderNormalMissionsList();
+        }
+
+        function renderNormalMissionsList() {
+            const listDiv = document.getElementById('missionList');
+            if (!listDiv) return;
+            listDiv.innerHTML = availableMissions.length === 0 ? '<p class="text-center text-gray-400">Gere missões para começar.</p>' : '';
+            availableMissions.forEach(mission => {
+                const item = document.createElement('div');
+                let classes = `card flex items-center justify-between bg-gray-700 cursor-pointer hover:bg-gray-600 transition ${mission.selected ? 'border-2 border-red-400' : ''}`;
+                item.className = classes;
+                item.innerHTML = `<div><h4 class="font-semibold text-red-300">${mission.title}</h4><p class="text-xs text-gray-400">Dificuldade: ${mission.difficulty} | Recompensa: $${mission.reward}</p></div>`;
+                item.addEventListener('click', () => selectMissionForStart(mission.id));
+                listDiv.appendChild(item);
+            });
+        }
+
+        function renderDangerousMissionsList() {
+            const listDiv = document.getElementById('dangerousMissionList');
+            if (!listDiv) return;
+            listDiv.innerHTML = dangerousMissions.length === 0 ? '<p class="text-center text-gray-400 p-4">Nenhuma ameaça iminente detectada.</p>' : '';
+            dangerousMissions.forEach(mission => {
+                const item = document.createElement('div');
+                let classes = `card flex items-center justify-between cursor-pointer hover:bg-red-900 transition dangerous-mission ${mission.selected ? 'border-2 border-yellow-300' : ''}`;
+                item.className = classes;
+                item.innerHTML = `<div><h4 class="font-semibold text-red-400">${mission.title}</h4><p class="text-xs text-gray-400">Dificuldade: ${mission.difficulty} | Recompensa: $${mission.reward}</p></div>`;
+                item.addEventListener('click', () => selectMissionForStart(mission.id));
+                listDiv.appendChild(item);
+            });
+        }
+
+        function selectMissionForStart(missionId) {
+            availableMissions.forEach(m => m.selected = false);
+            dangerousMissions.forEach(m => m.selected = false);
+
+            let mission = availableMissions.find(m => m.id === missionId) || dangerousMissions.find(m => m.id === missionId);
+            
+            if (mission) {
+                mission.selected = true;
+                selectedMissionForStart = mission;
+            } else {
+                selectedMissionForStart = null;
+            }
+            
+            renderNormalMissionsList();
+            renderDangerousMissionsList();
+            calculateMissionSuccessChance();
+        }
+
+        function renderAvailableAgentsForMission() {
+            const selectionDiv = document.getElementById('missionAgentSelection');
+            if(!selectionDiv) return;
+            selectionDiv.innerHTML = '';
+            const available = agents.filter(agent => !agent.onMission);
+            if (available.length === 0) {
+                selectionDiv.innerHTML = '<p class="text-center text-gray-400">Nenhum agente disponível.</p>';
+                return;
+            }
+            available.forEach(agent => {
+                const agentDiv = document.createElement('div');
+                agentDiv.className = 'flex items-center justify-between p-2 rounded hover:bg-gray-700';
+                agentDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="agent-${agent.id}-mission" value="${agent.id}" class="form-checkbox h-4 w-4 text-red-600 rounded mission-agent-checkbox">
+                        <label for="agent-${agent.id}-mission" class="text-gray-200">${agent.name} (Exp: ${agent.experience}, Saúde: ${agent.health.toFixed(0)})</label>
+                    </div>
+                    <button data-agent-id="${agent.id}" class="view-agent-details-btn text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Detalhes</button>
+                `;
+                selectionDiv.appendChild(agentDiv);
+                
+                const checkbox = agentDiv.querySelector('input');
+                checkbox.checked = selectedAgentsForMission.some(a => a.id === agent.id);
+            });
+        }
+
+        function handleMissionAgentSelection(e) {
+            if (e.target.classList.contains('mission-agent-checkbox')) {
+                const agentId = e.target.value;
+                if (e.target.checked) {
+                    const agent = agents.find(a => a.id === agentId);
+                    if (agent) selectedAgentsForMission.push(agent);
+                } else {
+                    selectedAgentsForMission = selectedAgentsForMission.filter(a => a.id !== agentId);
+                }
+                calculateMissionSuccessChance();
+            } else if (e.target.classList.contains('view-agent-details-btn')) {
+                const agentId = e.target.dataset.agentId;
+                selectAgent(agentId);
+                showTab('details');
+            }
+        }
+
+        function calculateMissionSuccessChance() {
+            const chanceDisplay = document.getElementById('missionSuccessChance');
+            const startBtn = document.getElementById('startMissionBtn');
+            if (!chanceDisplay || !startBtn) return;
+
+            if (!selectedMissionForStart || selectedAgentsForMission.length === 0) {
+                chanceDisplay.textContent = '0%';
+                startBtn.disabled = true;
+                return;
+            }
+            
+            let totalPower = selectedAgentsForMission.reduce((sum, agent) => {
+                return sum + agent.experience + agent.health + (agent.sanity / 2) +
+                    (agent.equippedWeapon?.successBonus || 0) + 
+                    (agent.equippedArmor?.successBonus || 0) + 
+                    (agent.equippedEquipment?.successBonus || 0);
+            }, 0);
+            
+            // Bônus de sinergia por ter mais agentes
+            const teamSize = selectedAgentsForMission.length;
+            const synergyBonus = 1 + (teamSize - 1) * 0.1; // 10% de bônus por membro adicional
+            totalPower *= synergyBonus;
+
+            let requiredPower = (selectedMissionForStart.difficulty * 100);
+            if (selectedMissionForStart.isDangerous) requiredPower *= 1.5;
+
+            let chance = Math.round(((totalPower - requiredPower) / requiredPower) * 100 + 50);
+            chance = Math.max(5, Math.min(95, chance));
+            
+            chanceDisplay.textContent = `${chance}%`;
+            startBtn.disabled = (chance === 0);
+        }
+
+        function startMission() {
+            if (!selectedMissionForStart || selectedAgentsForMission.length === 0) return showMessage('Selecione uma missão e agentes!', 'error');
+            
+            const verissimoInMission = selectedAgentsForMission.find(a => a.isVerissimo);
+            if (verissimoInMission) {
+                showConfirmation("Enviar o Veríssimo?", "Sem um Veríssimo na base, o ganho de experiência de todos os outros agentes será reduzido. Deseja continuar?", proceedWithMission);
+            } else {
+                proceedWithMission();
+            }
+        }
+        
+        function proceedWithMission() {
+            const missionDuration = getRandomNumber(24, 72) * 60 * 60 * 1000;
+            const completionTimestamp = gameDate.getTime() + missionDuration;
+
+            selectedAgentsForMission.forEach(agent => {
+                agent.onMission = selectedMissionForStart;
+                agent.missionCompletionTime = completionTimestamp;
+                agent.actionCompletionTime = 0;
+                agent.location = `Em missão: ${selectedMissionForStart.title}`;
+                agent.activity = 'Em missão';
+            });
+            showMessage(`Missão "${selectedMissionForStart.title}" iniciada!`, 'success');
+
+            if (selectedMissionForStart.isDangerous) {
+                dangerousMissions = dangerousMissions.filter(m => m.id !== selectedMissionForStart.id);
+            } else {
+                availableMissions = availableMissions.filter(m => m.id !== selectedMissionForStart.id);
+            }
+
+            selectedMissionForStart = null;
+            selectedAgentsForMission = [];
+            
+            renderNormalMissionsList();
+            renderDangerousMissionsList();
+            renderAvailableAgentsForMission();
+            calculateMissionSuccessChance();
+            updateUI();
+            showTab('agents');
+        }
+
+        function cancelMission() {
+            const activeMissionAgents = agents.filter(a => a.onMission);
+            if (activeMissionAgents.length === 0) return showMessage('Não há missões ativas.', 'error');
+            const missionTitle = activeMissionAgents[0].onMission.title;
+
+            showConfirmation(`Cancelar a missão "${missionTitle}"?`, "Agentes sofrerão penalidades.", () => {
+                activeMissionAgents.forEach(agent => {
+                    agent.health = Math.max(0, agent.health - getRandomNumber(10, 30));
+                    agent.sanity = Math.max(0, agent.sanity - getRandomNumber(5, 15));
+                    agent.onMission = null;
+                    agent.location = "Salão Principal";
+                    agent.activity = "Retornando de missão cancelada";
+                });
+                showMessage(`Missão "${missionTitle}" cancelada.`, 'error');
+                updateUI();
+            });
+        }
+        
+        function calculateSuccessChanceForTeam(mission, team) {
+            let totalPower = team.reduce((sum, agent) => {
+                return sum + agent.experience + agent.health + (agent.sanity / 2) +
+                    (agent.equippedWeapon?.successBonus || 0) + 
+                    (agent.equippedArmor?.successBonus || 0) + 
+                    (agent.equippedEquipment?.successBonus || 0);
+            }, 0);
+            
+            const teamSize = team.length;
+            const synergyBonus = 1 + (teamSize - 1) * 0.1;
+            totalPower *= synergyBonus;
+
+            let requiredPower = (mission.difficulty * 100);
+            if (mission.isDangerous) requiredPower *= 1.5;
+
+            let chance = Math.round(((totalPower - requiredPower) / requiredPower) * 100 + 50);
+            return Math.max(5, Math.min(95, chance));
+        }
+
+        function resolveMission(agent) {
+            if (!agent.onMission) return;
+            const mission = agent.onMission;
+            const team = agents.filter(a => a.onMission?.id === mission.id);
+            if (agent.id !== team[0].id) return; // Processa o relatório apenas para o primeiro agente da equipe
+
+            const successChance = calculateSuccessChanceForTeam(mission, team);
+            const roll = getRandomNumber(1, 100);
+            const outcome = roll <= successChance ? 'Sucesso' : 'Falha';
+            const casualties = [];
+
+            team.forEach(member => {
+                if (outcome === 'Sucesso') {
+                    member.experience = Math.min(100, member.experience + getRandomNumber(15, 25));
+                    member.sanity = Math.max(0, member.sanity - getRandomNumber(5, 10) * mission.difficulty);
+                    if (member.id === team[0].id) playerMoney += mission.reward;
+                } else {
+                    member.health = Math.max(0, member.health - (getRandomNumber(10, 25) * mission.difficulty / 2)); // Dano escala com dificuldade
+                    member.sanity = Math.max(0, member.sanity - getRandomNumber(10, 20) * mission.difficulty);
+                    if(member.health <= 0) {
+                        casualties.push(member.name);
+                        showMessage(`${member.name} morreu em combate.`, 'error');
+                        agents = agents.filter(a => a.id !== member.id);
+                        if (selectedAgent?.id === member.id) selectAgent(null);
+                    }
+                }
+                member.onMission = null;
+                member.location = "Salão Principal";
+                updatePsychologicalState(member);
+                performAction(member, "Descansar");
+            });
+
+            const report = {
+                id: crypto.randomUUID(),
+                missionTitle: mission.title,
+                agentsInvolved: team.map(a => a.name),
+                outcome: outcome,
+                date: new Date(gameDate),
+                narrative: generateMissionNarrative(mission, team, outcome),
+                casualties: casualties
+            };
+            missionReports.unshift(report);
+
+            showMessage(`Equipe retornou da missão "${mission.title}". Resultado: ${outcome}`, outcome === 'Sucesso' ? 'success' : 'error');
+        }
+        
+        // --- SISTEMA DE AÇÕES DOS AGENTES ---
+        function populateLocationAndActionSelectors() {
+            const locationSelect = document.getElementById('actionLocation');
+            locationSelect.innerHTML = '';
+            for (const location in locationActivities) {
+                if (location === "Entrando na Ordem") continue;
+                locationSelect.innerHTML += `<option value="${location}">${location}</option>`;
+            }
+        }
+
+        function performAction(agent, action, targetId = null) {
+            if (!agent || agent.onMission) return;
+
+            let durationMinutes = 0;
+            agent.activity = action;
+
+            switch(action) {
+                case "Integrar": durationMinutes = 8; agent.activity = "Integrando-se à Ordem"; break; // 8 in-game minutes = 4 real seconds
+                case "Descansar": durationMinutes = getRandomNumber(120, 360); break;
+                case "Treinar": durationMinutes = getRandomNumber(180, 480); agent.activity = "Treinando"; break;
+                case "Verificar Armas": durationMinutes = getRandomNumber(60, 120); agent.activity = "Verificando Armas"; break;
+                case "Estudar Rituais": durationMinutes = getRandomNumber(180, 480); agent.activity = "Estudando Rituais"; break;
+                case "Meditar": durationMinutes = getRandomNumber(120, 240); agent.activity = "Meditando"; break;
+                case "Patrulhar": durationMinutes = getRandomNumber(240, 600); agent.activity = "Patrulhando"; break;
+                case "Recuperar-se": durationMinutes = 9999999; agent.activity = "Recuperando-se"; break;
+                case "Visitar família":
+                case "Ir ao cinema":
+                case "Passear no parque":
+                    durationMinutes = getRandomNumber(240, 480); // 4 to 8 hours
+                    break;
+                case "Interagir com Agente...":
+                    const target = agents.find(a => a.id === targetId);
+                    if (target && !target.onMission) {
+                        durationMinutes = getRandomNumber(30, 90);
+                        const completionTime = gameDate.getTime() + (durationMinutes * 60 * 1000);
+                        
+                        target.location = agent.location;
+                        agent.activity = `Interagindo com ${target.name}`;
+                        
+                        target.activity = `Interagindo com ${agent.name}`;
+                        target.actionCompletionTime = completionTime;
+                    } else if (target && target.onMission) {
+                        showMessage(`${target.name} está em missão e não pode interagir.`, 'error');
+                        agent.activity = "Ocioso";
+                        durationMinutes = 0;
+                    } else { 
+                        agent.activity = "Ocioso"; 
+                        durationMinutes = 0;
+                    }
+                    break;
+                default: agent.activity = "Ocioso"; agent.actionCompletionTime = 0; return;
+            }
+
+            if (durationMinutes > 0) {
+                agent.actionCompletionTime = gameDate.getTime() + (durationMinutes * 60 * 1000 / timeMultiplier);
+            }
+            updateUI();
+        }
+
+        function completeAgentAction(agent) {
+            const lastAction = agent.activity;
+            agent.actionCompletionTime = 0;
+
+            if (lastAction.includes("Integrando-se à Ordem")) {
+                agent.location = "Salão Principal";
+                showMessage(`${agent.name} foi integrado à Ordem e está no Salão Principal.`, 'success');
+            } else if (lastAction.includes("Treinando") || lastAction.includes("Verificar Armas") || lastAction.includes("Estudando Rituais")) {
+                const expGain = getRandomNumber(1, 3);
+                agent.experience = Math.min(100, agent.experience + expGain);
+                showMessage(`${agent.name} concluiu: ${lastAction}. (+${expGain} EXP)`, 'success');
+            } else if (lastAction.includes("Descansando") || lastAction.includes("Meditar") || lastAction.includes("Visitar família") || lastAction.includes("Ir ao cinema") || lastAction.includes("Passear no parque")) {
+                let sanityGain = 0;
+                if (lastAction.includes("Descansando")) sanityGain = getRandomNumber(5, 15);
+                if (lastAction.includes("Meditar")) sanityGain = getRandomNumber(10, 25);
+                if (lastAction.includes("Visitar família")) sanityGain = getRandomNumber(20, 30);
+                if (lastAction.includes("Ir ao cinema")) sanityGain = getRandomNumber(10, 20);
+                if (lastAction.includes("Passear no parque")) sanityGain = getRandomNumber(15, 25);
+                agent.sanity = Math.min(100, agent.sanity + sanityGain);
+                agent.health = Math.min(100, agent.health + getRandomNumber(10, 20)); // Descansar também recupera vida
+                showMessage(`${agent.name} concluiu: ${lastAction}. (+${sanityGain} Sanidade)`, 'success');
+            } else if (lastAction.includes("Interagindo com")) {
+                const targetName = lastAction.replace("Interagindo com ", "");
+                const target = agents.find(a => a.name === targetName);
+                if (target) {
+                    const change = getRandomNumber(1, 5);
+                    agent.relationships[target.id] = Math.min(100, (agent.relationships[target.id] || 0) + change);
+                    target.relationships[agent.id] = Math.min(100, (target.relationships[agent.id] || 0) + change);
+                }
+            }
+            
+            // Lógica de comportamento autônomo
+            const otherIdleAgentsInLocation = agents.filter(a => 
+                a.id !== agent.id && 
+                a.location === agent.location && 
+                !a.onMission && 
+                a.actionCompletionTime === 0
+            );
+
+            if (otherIdleAgentsInLocation.length > 0 && Math.random() < 0.5) { // 50% chance de interagir se alguém estiver livre
+                const target = getRandomItem(otherIdleAgentsInLocation);
+                performAction(agent, "Interagir com Agente...", target.id);
+                return;
+            }
+            
+            if (Math.random() < 0.3) { // 30% chance de se mover para um novo local
+                const internalLocations = Object.keys(locationActivities).filter(l => l !== "Entrando na Ordem" && l !== "Fora da Ordem" && l !== "Sala do Veríssimo");
+                agent.location = getRandomItem(internalLocations);
+                showMessage(`${agent.name} moveu-se para ${agent.location}.`, 'success');
+            }
+
+            const validActions = locationActivities[agent.location] || ["Descansar"];
+            performAction(agent, getRandomItem(validActions.filter(a => a !== "Interagir com Agente...")));
+        }
+        
+        // --- FUNÇÕES DA ORDEM ---
+        function renderOrderDetails() {
+            document.getElementById('totalAgentsStat').textContent = agents.length;
+            document.getElementById('activeMissionsStat').textContent = agents.filter(a => a.onMission).length;
+            if (gameStartDate) {
+                const diffTime = Math.abs(gameDate - gameStartDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                document.getElementById('daysPassedStat').textContent = diffDays;
+            }
+        }
+        
+        function renderOrderEvents() {
+            const listDiv = document.getElementById('eventsList');
+            listDiv.innerHTML = '';
+            orderEvents.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = 'card bg-gray-700';
+                eventCard.innerHTML = `
+                    <h4 class="text-lg font-semibold text-red-300">${event.name}</h4>
+                    <p class="text-sm text-gray-400 my-2">${event.description}</p>
+                    <p class="text-sm font-bold text-green-400">Efeito: +${event.sanityBoost} Sanidade</p>
+                    <p class="text-sm font-bold text-red-400">Custo: $${event.cost}</p>
+                    <button data-event-id="${event.id}" class="w-full mt-3 event-btn">Organizar</button>
+                `;
+                listDiv.appendChild(eventCard);
+            });
+            document.querySelectorAll('.event-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => triggerEvent(e.target.dataset.eventId));
+            });
+        }
+
+        function triggerEvent(eventId) {
+            const event = orderEvents.find(e => e.id === eventId);
+            if (!event) return;
+            if (playerMoney < event.cost) {
+                return showMessage("Dinheiro insuficiente para organizar este evento.", "error");
+            }
+            
+            showConfirmation(`Organizar "${event.name}"?`, `Isso custará $${event.cost}.`, () => {
+                playerMoney -= event.cost;
+                let agentsAffected = 0;
+                agents.forEach(agent => {
+                    if (!agent.onMission) {
+                        agent.sanity = Math.min(100, agent.sanity + event.sanityBoost);
+                        updatePsychologicalState(agent);
+                        agentsAffected++;
+                    }
+                });
+                showMessage(`${event.name} realizado! A sanidade de ${agentsAffected} agentes melhorou.`, 'success');
+                updateUI();
+            });
+        }
+
+        function generateMissionNarrative(mission, team, outcome) {
+            const leader = team[0].name;
+            const teamSize = team.length;
+            const location = mission.title.split(' em ')[1] || mission.title.split(' na ')[1] || "local desconhecido";
+            
+            if (outcome === 'Sucesso') {
+                const narratives = [
+                    `A equipe liderada por ${leader} demonstrou coordenação exemplar. A ameaça em ${location} foi neutralizada com precisão cirúrgica.`,
+                    `Apesar de alguns sustos, a inteligência e força do time prevaleceram. A missão em ${location} foi um sucesso retumbante.`,
+                    `Com táticas impecáveis, os ${teamSize} agentes contiveram a anomalia em ${location}. A Ordem está mais segura graças a eles.`
+                ];
+                return getRandomItem(narratives);
+            } else {
+                const narratives = [
+                    `A equipe encontrou uma resistência paranormal muito acima do esperado em ${location}. Foram forçados a recuar para evitar baixas catastróficas.`,
+                    `A missão em ${location} foi um fracasso. A entidade se provou poderosa demais e a equipe sofreu perdas significativas de sanidade e saúde.`,
+                    `Um erro tático custou caro. A equipe de ${leader} não conseguiu completar o objetivo em ${location} e retornou com mais perguntas do que respostas.`
+                ];
+                return getRandomItem(narratives);
+            }
+        }
+
+        function renderMissionReports() {
+            const container = document.getElementById('missionReportsContainer');
+            if (!container) return;
+            container.innerHTML = missionReports.length === 0 ? '<p class="text-center text-gray-400">Nenhuma missão foi concluída ainda.</p>' : '';
+            missionReports.forEach(report => {
+                const reportCard = document.createElement('div');
+                const outcomeClass = report.outcome === 'Sucesso' ? 'border-green-500' : 'border-red-500';
+                const outcomeText = report.outcome === 'Sucesso' ? 'text-green-400' : 'text-red-400';
+                let casualtiesText = '';
+                if (report.casualties && report.casualties.length > 0) {
+                    casualtiesText = `<p class="text-red-500 mt-2"><strong>Baixas:</strong> ${report.casualties.join(', ')}</p>`;
+                }
+                reportCard.className = `card bg-gray-800 border-l-4 ${outcomeClass}`;
+                reportCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-semibold text-red-300">${report.missionTitle}</h3>
+                        <span class="text-sm font-bold ${outcomeText}">${report.outcome.toUpperCase()}</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">${new Date(report.date).toLocaleDateString('pt-BR')}</p>
+                    <p class="text-gray-300 mb-3"><strong>Agentes:</strong> ${report.agentsInvolved.join(', ')}</p>
+                    <p class="text-gray-400 italic">"${report.narrative}"</p>
+                    ${casualtiesText}
+                `;
+                container.appendChild(reportCard);
+            });
+        }
+
+        // --- FUNÇÕES DE MODAL ---
+        function showConfirmation(title, message, onConfirm) {
+            const modal = document.getElementById('confirmationModal');
+            document.getElementById('confirmationTitle').textContent = title;
+            document.getElementById('confirmationMessage').textContent = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            const confirmBtn = document.getElementById('confirmBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            const confirmHandler = () => { onConfirm(); hideModal(); };
+            const cancelHandler = () => { hideModal(); };
+            
+            const hideModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            };
+
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cancelHandler);
+        }
+
+        // --- FUNÇÕES DE RELACIONAMENTO FAMILIAR ---
+        function getFamilyTie(agent1, agent2) {
+            if (agent1.family.spouse === agent2.id) return "Cônjuge";
+            if (agent1.family.parents?.includes(agent2.id)) return "Pai/Mãe";
+            if (agent1.family.children?.includes(agent2.id)) return "Filho(a)";
+            if (agent1.family.siblings?.includes(agent2.id)) return "Irmão(ã)";
+            return null;
+        }
+
+        function addFamilyTie() {
+            const targetId = document.getElementById('familyAgentSelect').value;
+            const relation = document.getElementById('familyRelationSelect').value;
+            if (!selectedAgent || !targetId || !relation) return;
+
+            const targetAgent = agents.find(a => a.id === targetId);
+            if (!targetAgent) return;
+
+            // Limpa laços antigos para evitar múltiplos cônjuges/pais
+            if (relation === 'spouse') {
+                if (selectedAgent.family.spouse) agents.find(a => a.id === selectedAgent.family.spouse).family.spouse = null;
+                if (targetAgent.family.spouse) agents.find(a => a.id === targetAgent.family.spouse).family.spouse = null;
+                selectedAgent.family.spouse = targetAgent.id;
+                targetAgent.family.spouse = selectedAgent.id;
+            } else if (relation === 'parent') {
+                selectedAgent.family.children = selectedAgent.family.children || [];
+                selectedAgent.family.children.push(targetAgent.id);
+                targetAgent.family.parents = targetAgent.family.parents || [];
+                targetAgent.family.parents.push(selectedAgent.id);
+            } else if (relation === 'child') {
+                selectedAgent.family.parents = selectedAgent.family.parents || [];
+                selectedAgent.family.parents.push(targetAgent.id);
+                targetAgent.family.children = targetAgent.family.children || [];
+                targetAgent.family.children.push(selectedAgent.id);
+            } else if (relation === 'sibling') {
+                selectedAgent.family.siblings = selectedAgent.family.siblings || [];
+                targetAgent.family.siblings = targetAgent.family.siblings || [];
+                if (!selectedAgent.family.siblings.includes(targetAgent.id)) selectedAgent.family.siblings.push(targetAgent.id);
+                if (!targetAgent.family.siblings.includes(selectedAgent.id)) targetAgent.family.siblings.push(selectedAgent.id);
+            }
+            
+            document.getElementById('familyTieModal').classList.add('hidden');
+            renderRelationships();
+        }
+
+        // --- SISTEMA DE SALVAMENTO ---
+        function getGameStateAsJson() {
+            const state = {
+                agents, potentialRecruits, itemStockpile, availableMissions, dangerousMissions,
+                missionReports, currentVerissimoAgentId, playerMoney, gameStartDate, gameDate,
+                dangerousMissionCountdown
+            };
+            return JSON.stringify(state);
+        }
+
+        function saveGameToFile() {
+            const dataStr = getGameStateAsJson();
+            const dataBlob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.download = 'dadossalvos.json';
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+            showMessage("Jogo salvo em arquivo!", "success");
+        }
+
+        function loadGameState(jsonString) {
+            try {
+                const savedState = JSON.parse(jsonString);
+                agents = savedState.agents ? savedState.agents.map(obj => Object.assign(new Agent(), obj)) : [];
+                potentialRecruits = savedState.potentialRecruits ? savedState.potentialRecruits.map(obj => Object.assign(new Agent(), obj)) : [];
+                itemStockpile = savedState.itemStockpile || [];
+                availableMissions = savedState.availableMissions || [];
+                dangerousMissions = savedState.dangerousMissions || [];
+                missionReports = savedState.missionReports ? savedState.missionReports.map(report => ({...report, date: new Date(report.date)})) : [];
+                currentVerissimoAgentId = savedState.currentVerissimoAgentId || null;
+                playerMoney = savedState.playerMoney || 5000;
+                gameStartDate = savedState.gameStartDate ? new Date(savedState.gameStartDate) : new Date();
+                gameDate = savedState.gameDate ? new Date(savedState.gameDate) : new Date();
+                dangerousMissionCountdown = savedState.dangerousMissionCountdown || 0;
+
+                generateRecruitList(); // Gerar novos recrutas ao carregar
+
+                stopTime();
+                // Repopulate static UI elements that are not part of the save state
+                populateLocationAndActionSelectors();
+                populateShopSelectors();
+                renderOrderEvents();
+                
+                document.getElementById('dateStartModal').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                
+                updateUI(); // Now update the dynamic UI
+                startTime();
+                showMessage("Jogo carregado com sucesso!", "success");
+            } catch (e) {
+                showMessage("Erro ao carregar o arquivo de save.", "error");
+                console.error("Erro ao carregar:", e);
+            }
+        }
+        
+        function formatDuration(ms) {
+            if (ms < 0) ms = 0;
+            const totalSeconds = Math.floor(ms / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            return `${days}d ${hours}h ${minutes}m`;
+        }
+
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('dateStartModal').classList.remove('hidden');
+
+            document.getElementById('startGameBtn').addEventListener('click', () => {
+                const year = document.getElementById('startYear').value;
+                const month = document.getElementById('startMonth').value;
+                const day = document.getElementById('startDay').value;
+                startGame(year, month, day);
+            });
+
+            // --- LÓGICA PARA NOVAS ABAS COM ÍCONES ---
+            const mainTabButtons = document.querySelectorAll('.main-tab-button');
+            const subTabMenus = document.querySelectorAll('.sub-tab-menu');
+
+            mainTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Desativa todos
+                    mainTabButtons.forEach(btn => btn.classList.remove('active'));
+                    subTabMenus.forEach(menu => menu.classList.remove('active'));
+
+                    // Ativa o clicado
+                    button.classList.add('active');
+                    const subMenu = button.nextElementSibling;
+                    if (subMenu && subMenu.classList.contains('sub-tab-menu')) {
+                        subMenu.classList.add('active');
+                        // Clica automaticamente na primeira sub-aba
+                        const firstSubTab = subMenu.querySelector('.tab-button');
+                        if (firstSubTab) {
+                            firstSubTab.click();
+                        }
+                    }
+                });
+            });
+
+
+            // Demais listeners
+            document.querySelectorAll('.tab-button').forEach(b => b.addEventListener('click', e => showTab(e.target.dataset.tab)));
+            document.getElementById('createCustomAgentBtn').addEventListener('click', createCustomAgent);
+            document.getElementById('passDayBtn').addEventListener('click', passDay);
+            document.getElementById('promoteToVerissimoBtn').addEventListener('click', promoteToVerissimo);
+            document.getElementById('stockpileEquipBtn').addEventListener('click', equipItemFromStockpile);
+            document.querySelectorAll('.sub-tab-button').forEach(b => b.addEventListener('click', e => showSubTab(e.target.dataset.subTab)));
+            document.getElementById('cancelCustomAgentFormBtn').addEventListener('click', () => { document.getElementById('customAgentForm').classList.add('hidden'); });
+            document.querySelectorAll('.buy-item-btn').forEach(button => button.addEventListener('click', (e) => buyItem(e.target.dataset.itemType)));
+            document.getElementById('generateMissionListBtn').addEventListener('click', generateRandomMissions);
+            document.getElementById('createCustomMissionBtn').addEventListener('click', createCustomMission);
+            document.getElementById('startMissionBtn').addEventListener('click', startMission);
+            document.getElementById('cancelActiveMissionBtn').addEventListener('click', cancelMission);
+            document.getElementById('missionAgentSelection').addEventListener('click', handleMissionAgentSelection);
+            document.getElementById('startTimeBtn').addEventListener('click', startTime);
+            document.getElementById('stopTimeBtn').addEventListener('click', stopTime);
+            document.getElementById('superFastTimeBtn').addEventListener('click', setSuperFastTime);
+            document.getElementById('saveGameBtn').addEventListener('click', saveGameToFile);
+            document.getElementById('loadGameBtn').addEventListener('click', () => document.getElementById('loadGameInput').click());
+            document.getElementById('forceRecruitBtn').addEventListener('click', generateRecruitList);
+            document.getElementById('cheatAddCustomAgentBtn').addEventListener('click', () => {
+                showTab('recruitment');
+                document.getElementById('customAgentForm').classList.remove('hidden');
+            });
+
+            document.getElementById('loadGameInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    loadGameState(event.target.result);
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // Limpa o input para permitir carregar o mesmo arquivo novamente
+            });
+            document.getElementById('newGameBtn').addEventListener('click', () => {
+                showConfirmation("Iniciar Novo Jogo?", "Seu progresso atual será perdido. Tem certeza?", () => {
+                    localStorage.removeItem('paranormalSaveData'); // Limpa qualquer save antigo do navegador
+                    window.location.reload();
+                });
+            });
+            document.getElementById('menu-toggle').addEventListener('click', () => {
+                document.getElementById('mobileMenuContainer').classList.remove('hidden');
+            });
+            document.getElementById('mobile-menu-close').addEventListener('click', () => {
+                document.getElementById('mobileMenuContainer').classList.add('hidden');
+            });
+
+            document.getElementById('addFamilyTieBtn').addEventListener('click', () => {
+                if (!selectedAgent) return;
+                const modal = document.getElementById('familyTieModal');
+                const select = document.getElementById('familyAgentSelect');
+                select.innerHTML = '';
+                agents.filter(a => a.id !== selectedAgent.id).forEach(agent => {
+                    select.innerHTML += `<option value="${agent.id}">${agent.name}</option>`;
+                });
+                modal.classList.remove('hidden');
+            });
+            document.getElementById('confirmFamilyBtn').addEventListener('click', addFamilyTie);
+            document.getElementById('cancelFamilyBtn').addEventListener('click', () => document.getElementById('familyTieModal').classList.add('hidden'));
+
+            document.getElementById('changeLocationBtn').addEventListener('click', () => { 
+                if (selectedAgent && !selectedAgent.onMission) { 
+                    selectedAgent.location = document.getElementById('actionLocation').value; 
+                    const validActions = locationActivities[selectedAgent.location] || ["Descansar"];
+                    performAction(selectedAgent, getRandomItem(validActions.filter(a => a !== "Interagir com Agente...")));
+                    updateUI(); 
+                } 
+            });
+
+            document.getElementById('agentAction').addEventListener('change', (e) => {
+                const interactSelect = document.getElementById('interactWithAgentSelect');
+                interactSelect.classList.toggle('hidden', e.target.value !== 'Interagir com Agente...');
+            });
+
+            document.getElementById('performActionBtn').addEventListener('click', () => {
+                if (selectedAgent) {
+                    const action = document.getElementById('agentAction').value;
+                    const targetId = document.getElementById('interactWithAgentSelect').value;
+                    if (action === "Interagir com Agente..." && !targetId) {
+                        return showMessage('Selecione um agente alvo.', 'error');
+                    }
+                    performAction(selectedAgent, action, targetId);
+                }
+            });
+
+            // Adiciona o aviso antes de fechar a página
+            window.addEventListener('beforeunload', (e) => {
+                const confirmationMessage = 'Seu progresso será perdido se você não salvar o jogo manualmente na aba "Simulação". Tem certeza que deseja sair?';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            });
+        });
+    </script>
+</body>
+</html>
